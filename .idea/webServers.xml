@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="WebServers">
+    <option name="servers">
+      <webServer id="752609ba-67b1-49d6-95b1-5e7e6c3abbe6" name="win10_workstation" url="http://192.168.1.225">
+        <fileTransfer rootFolder="/E:/tgraph/compare_test" accessType="SFTP" host="192.168.1.225" port="22" sshConfigId="34c5c73d-6ced-4b90-abe6-e562d90921da" sshConfig="zhangh@192.168.1.225:22 password">
+          <advancedOptions>
+            <advancedOptions dataProtectionLevel="Private" passiveMode="true" shareSSLContext="true" />
+          </advancedOptions>
+        </fileTransfer>
+      </webServer>
+    </option>
+  </component>
+</project>
