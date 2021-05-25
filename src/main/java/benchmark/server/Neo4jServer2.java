@@ -162,86 +162,93 @@ public class Neo4jServer2 extends Neo4jSocketServer.ReqExecutor {
     private AbstractTransaction.Result execute(UpdateTemporalDataTx tx) {
         try (Transaction t = db.beginTx()) {
             // Do not consider that the old value equals to the new value
-            int st = tx.getStartTime();
-            int en = tx.getEndTime();
             Node road = db.findNode(() -> "Road", "name", tx.getRoadId());
-            Node startCross = db.findNode(() -> "Cross", "id", road.getProperty("start_cross_id"));
-            Node endCross = db.findNode(() -> "Cross", "id", road.getProperty("end_cross_id"));
-            Iterable<Relationship> rels = startCross.getRelationships(Edge.REACH_TO, Direction.OUTGOING);
+            Node startCross = db.findNode(Label.label("Cross"), "id", road.getProperty("start_cross_id"));
+            Node endCross = db.findNode(Label.label("Cross"), "id", road.getProperty("end_cross_id"));
+            String p = (String) road.getProperty("relationships");
+            String[] rels = p.substring(1).split("\\|");
             ArrayList<Relationship> relsStart2End = new ArrayList<>();
-            for (Relationship rel : rels) {
-                if (endCross.getId() == rel.getEndNode().getId()) {
-                    relsStart2End.add(rel);
-                }
-            }
-            boolean hasInner = false;
+            ArrayList<Relationship> willBeDeleted = new ArrayList<>();
+            for (String rel : rels)
+                relsStart2End.add(db.getRelationshipById(Long.parseLong(rel)));
+            boolean hasInner = true;
+            int mn = Integer.MAX_VALUE, mx = Integer.MIN_VALUE;
+            Relationship mnRel = null, mxRel = null;
             for (Relationship rel : relsStart2End) {
-                int startTime = (int) rel.getProperty("start_time");
-                int endTime = (int) rel.getProperty("end_time");
-                int status = (int) rel.getProperty("status");
-                int segCnt = (int) rel.getProperty("seg_cnt");
-                int travelTime = (int) rel.getProperty("travel_time");
-                if (en >= startTime && st <= endTime) {
-                    rel.delete();
-                    if (st >= startTime && en <= endTime) { // inner
-                        hasInner = true;
-                        // split into three parts : start ~ st - 1, st ~ en - 1, en ~ end
-                        if (st > startTime) {
-                            Relationship left = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
-                            left.setProperty("status", status);
-                            left.setProperty("seg_cnt", segCnt);
-                            left.setProperty("travel_time", travelTime);
-                            left.setProperty("start_time", startTime);
-                            left.setProperty("end_time", st - 1);
-                        }
-                        if (en > st) {
-                            Relationship middle = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
-                            middle.setProperty("status", tx.getJamStatus());
-                            middle.setProperty("seg_cnt", tx.getSegmentCount());
-                            middle.setProperty("travel_time", tx.getTravelTime());
-                            middle.setProperty("start_time", st);
-                            middle.setProperty("end_time", en - 1);
-                        }
-                        if (endTime > en) {
-                            Relationship right = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
-                            right.setProperty("status", status);
-                            right.setProperty("seg_cnt", segCnt);
-                            right.setProperty("travel_time", travelTime);
-                            right.setProperty("start_time", en);
-                            right.setProperty("end_time", endTime);
-                        }
+                int st = (int) rel.getProperty("start_time");
+                int en = (int) rel.getProperty("end_time");
+                if (tx.getEndTime() >= st && tx.getStartTime() <= en) {
+                    willBeDeleted.add(rel);
+                    if (hasInner && tx.getStartTime() >= st && tx.getEndTime() <= en) {
+                        mn = st;
+                        mx = en;
+                        mnRel = mxRel = rel;
                         break;
                     }
-                    if (st > startTime) { // left
-                        Relationship left = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
-                        left.setProperty("status", status);
-                        left.setProperty("seg_cnt", segCnt);
-                        left.setProperty("travel_time", travelTime);
-                        left.setProperty("start_time", startTime);
-                        left.setProperty("end_time", st);
-                    } else if (en < endTime) { // right
-                        Relationship right = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
-                        right.setProperty("status", status);
-                        right.setProperty("seg_cnt", segCnt);
-                        right.setProperty("travel_time", travelTime);
-                        right.setProperty("start_time", en);
-                        right.setProperty("end_time", endTime);
-                    } else { // middle
-                        // nop
+                    hasInner = false;
+                    if (st < mn) {
+                        mnRel = rel;
+                        mn = st;
+                    }
+                    if (en > mx) {
+                        mxRel = rel;
+                        mx = en;
                     }
                 }
             }
-            if (!hasInner) {
-                Relationship middle = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
-                middle.setProperty("status", tx.getJamStatus());
-                middle.setProperty("seg_cnt", tx.getSegmentCount());
-                middle.setProperty("travel_time", tx.getTravelTime());
-                middle.setProperty("start_time", st);
-                middle.setProperty("end_time", en);
+            // insert the new value.
+            Relationship r = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
+            r.setProperty("status", tx.getJamStatus());
+            r.setProperty("travel_time", tx.getTravelTime());
+            r.setProperty("seg_cnt", tx.getSegmentCount());
+            r.setProperty("start_time", tx.getStartTime());
+            r.setProperty("end_time", tx.getEndTime());
+            r.setProperty("road_node_id", road.getId());
+            updateRoadNodeTimeRelationsProperty(road, r.getId(), 1);
+
+            // update the first and last range.
+            r = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
+            r.setProperty("status", mnRel.getProperty("status"));
+            r.setProperty("travel_time", mnRel.getProperty("travel_time"));
+            r.setProperty("seg_cnt", mnRel.getProperty("seg_cnt"));
+            r.setProperty("start_time", mn);
+            r.setProperty("end_time", tx.getStartTime() - 1);
+            r.setProperty("road_node_id", road.getId());
+            updateRoadNodeTimeRelationsProperty(road, r.getId(), 1);
+
+            r = startCross.createRelationshipTo(endCross, Edge.REACH_TO);
+            r.setProperty("status", mxRel.getProperty("status"));
+            r.setProperty("travel_time", mxRel.getProperty("travel_time"));
+            r.setProperty("seg_cnt", mxRel.getProperty("seg_cnt"));
+            r.setProperty("start_time", tx.getEndTime() + 1);
+            r.setProperty("end_time", mx);
+            r.setProperty("road_node_id", road.getId());
+            updateRoadNodeTimeRelationsProperty(road, r.getId(), 1);
+
+            // delete the old value.
+            for (Relationship d : willBeDeleted) {
+                updateRoadNodeTimeRelationsProperty(road, d.getId(), 0);
+                d.delete();
             }
             t.success();
         }
         return new AbstractTransaction.Result();
+    }
+
+    // kind == 0 means delete, kind == 1 means add.
+    private void updateRoadNodeTimeRelationsProperty(Node road, long rel, int kind) {
+        String cur = getNewPattern(road, rel, kind);
+        road.setProperty("relationships", cur);
+    }
+
+    private String getNewPattern(Node road, long rel, int kind) {
+        String p = (String) road.getProperty("relationships");
+        String[] rels = p.substring(1).split("\\|");
+        StringBuffer t = new StringBuffer();
+        if (kind == 1) return p + "|" + rel;
+        for (String r : rels)
+            t.append(Long.parseLong(r) == rel ? "" : "|" + r);
+        return t.toString();
     }
 
     private AbstractTransaction.Result execute(SnapshotQueryTx tx) {
@@ -249,7 +256,7 @@ public class Neo4jServer2 extends Neo4jSocketServer.ReqExecutor {
             List<Pair<String, Integer>> res = new ArrayList<>();
             int time = tx.getTimestamp();
             HashMap<Long, Boolean> isExists = new HashMap<>();
-            // bottleneck. find all time edge. Is there other way lower complexity?
+            // bottleneck. find all time edge. Are there other ways lower complexity?
             for (Relationship rel : db.getAllRelationships()) {
                 long rId = (long) rel.getProperty("road_node_id");
                 Boolean ok = isExists.get(rId);
@@ -373,7 +380,7 @@ public class Neo4jServer2 extends Neo4jSocketServer.ReqExecutor {
             long crossId = tx.getNodeId();
             List<String> res = new ArrayList<>();
             ResourceIterator<Node> roads = db.findNodes(Label.label("Road"));
-            for (; roads.hasNext(); ) {
+            while (roads.hasNext()) {
                 Node road = roads.next();
                 if ((int) road.getProperty("start_cross_id") == crossId || (int) road.getProperty("end_cross_id") == crossId) {
                     res.add((String) road.getProperty("name"));
@@ -417,7 +424,7 @@ public class Neo4jServer2 extends Neo4jSocketServer.ReqExecutor {
             try (Transaction tx = db.beginTx()) {
                 Node road = db.getNodeById(roadId);
                 String p = (String) road.getProperty("relationships");
-                String[] rels = p.substring(1).split("|");
+                String[] rels = p.substring(1).split("\\|");
                 int nextWhen = when;
                 boolean inner = true;
                 for (String id : rels) {

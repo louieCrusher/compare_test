@@ -34,10 +34,10 @@ public class WriteTemporalPropertyTest {
 
     @BeforeClass
     public static void initClient() throws IOException, ExecutionException, InterruptedException, SQLException, ClassNotFoundException {
-        logger = Helper.getLogger();
+        // logger = Helper.getLogger();
         client = new PostgreSQLExecutorClient(serverHost, threadCnt, 800);
         post = new BenchmarkTxResultProcessor("Postgre(WriteTemporal)", Helper.codeGitVersion());
-        post.setLogger(logger);
+        // post.setLogger(logger);
     }
 
     @Test
@@ -55,8 +55,8 @@ public class WriteTemporalPropertyTest {
     @AfterClass
     public static void close() throws IOException, InterruptedException, ProducerException {
         client.close();
-        Thread.sleep(1000 * 60 * 2);
+        // Thread.sleep(1000 * 60 * 2);
         post.close();
-        logger.close();
+        // logger.close();
     }
 }

@@ -23,7 +23,7 @@ public class WriteTemporalPropertyTest {
     private static int opPerTx = Integer.parseInt(Helper.mustEnv("TEMPORAL_DATA_PER_TX")); // number of neo4j queries executed in one transaction.
     private static String startDay = Helper.mustEnv("TEMPORAL_DATA_START"); //0501
     private static String endDay = Helper.mustEnv("TEMPORAL_DATA_END"); //0630
-    private static String serverHost = Helper.mustEnv("DB_HOST"); // hostname of mariadb server.
+    private static String serverHost = Helper.mustEnv("DB_HOST"); // hostname of neo4j server.
     // E:\test-data
     private static String dataFilePath = Helper.mustEnv("RAW_DATA_PATH");
 
@@ -33,10 +33,10 @@ public class WriteTemporalPropertyTest {
 
     @BeforeClass
     public static void initClient() throws IOException, ExecutionException, InterruptedException, SQLException, ClassNotFoundException {
-        logger = Helper.getLogger();
+        // logger = Helper.getLogger();
         client = new Neo4jExecutorClient(serverHost, threadCnt, 800);
         post = new BenchmarkTxResultProcessor("Neo4j Server1(WriteTemporal)", Helper.codeGitVersion());
-        post.setLogger(logger);
+        // post.setLogger(logger);
     }
 
     @Test
@@ -54,8 +54,8 @@ public class WriteTemporalPropertyTest {
     @AfterClass
     public static void close() throws IOException, InterruptedException, ProducerException {
         client.close();
-        Thread.sleep(1000 * 60 * 2);
+        // Thread.sleep(1000 * 60 * 2);
         post.close();
-        logger.close();
+        // logger.close();
     }
 }

@@ -306,12 +306,6 @@ public class MariaDBExecutorClient implements DBProxy {
                             mnId = id;
                         }
                     }
-                    // delete the old value.
-                    for (Long id : mp.keySet()) {
-                        stmt2.setLong(1, id);
-                        stmt2.addBatch();
-                    }
-                    stmt2.executeBatch();
                     // insert the new value.
                     stmt1.setTimestamp(1, new Timestamp(tx.getStartTime() * 1000L));
                     stmt1.setTimestamp(2, new Timestamp(tx.getEndTime() * 1000L));
@@ -346,8 +340,17 @@ public class MariaDBExecutorClient implements DBProxy {
                             stmt1.setInt(5, rs.getInt("travel_t"));
                             stmt1.setInt(6, rs.getInt("seg_cnt"));
                             stmt1.execute();
+                            System.out.println("insert the last range.");
                         }
                     }
+
+                    // delete the old value.
+                    for (Long id : mp.keySet()) {
+                        stmt2.setLong(1, id);
+                        stmt2.addBatch();
+                    }
+                    stmt2.executeBatch();
+                    conn.commit();
                 } catch (SQLException e) {
                     e.printStackTrace();
                 } finally {

@@ -46,7 +46,7 @@ public class Neo4jSocketServer {
 
     public void start() throws IOException {
         db = new GraphDatabaseFactory().newEmbeddedDatabase(dbPath);
-        // db = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(dbPath).loadPropertiesFromFile("E:\\compare_test\\neo4j.conf").newGraphDatabase();
+        // db = new GraphDatabaseFactory().newEmbeddedDatabaseBuilder(dbPath).loadPropertiesFromFile("C:\\Users\\yuewa\\tgraph\\neo4j.conf").newGraphDatabase();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> db.shutdown()));
 
         ServerStatusMonitor monitor = new ServerStatusMonitor();

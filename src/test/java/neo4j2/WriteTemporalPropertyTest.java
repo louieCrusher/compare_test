@@ -33,10 +33,10 @@ public class WriteTemporalPropertyTest {
 
     @BeforeClass
     public static void initClient() throws IOException, ExecutionException, InterruptedException, SQLException, ClassNotFoundException {
-        logger = Helper.getLogger();
+        // logger = Helper.getLogger();
         client = new Neo4jExecutorClient(serverHost, threadCnt, 800);
         post = new BenchmarkTxResultProcessor("Neo4j Server2(WriteTemporal)", Helper.codeGitVersion());
-        post.setLogger(logger);
+        // post.setLogger(logger);
     }
 
     @Test
@@ -54,8 +54,8 @@ public class WriteTemporalPropertyTest {
     @AfterClass
     public static void close() throws IOException, InterruptedException, ProducerException {
         client.close();
-        Thread.sleep(1000 * 60 * 2);
+        // Thread.sleep(1000 * 60 * 2);
         post.close();
-        logger.close();
+        // logger.close();
     }
 }

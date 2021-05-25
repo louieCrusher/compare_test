@@ -14,6 +14,7 @@ import scala.Tuple4;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Timestamp;
 import java.util.*;
 
 public class Neo4jServer1 extends Neo4jSocketServer.ReqExecutor {
@@ -185,6 +186,7 @@ public class Neo4jServer1 extends Neo4jSocketServer.ReqExecutor {
                 ret = db.createNode(Label.label("Time"));
                 ret.setProperty("st_time", startTime);
                 ret.setProperty("en_time", endTime);
+                ret.setProperty("ref", 0); // Node's reference count.
             }
             tx.success();
         }
@@ -207,6 +209,8 @@ public class Neo4jServer1 extends Neo4jSocketServer.ReqExecutor {
                     // if exists, use it, else, create a new time node.
                     Node timeNode = getProperTimeNode(s.getTime(), Integer.MAX_VALUE);
                     Relationship rel = timeNode.createRelationshipTo(roadNode, Edge.TIME_FROM_START_TO_END);
+                    int referenceCount = (int) timeNode.getProperty("ref");
+                    timeNode.setProperty("ref", referenceCount + 1);
                     rel.setProperty("status", s.getJamStatus());
                     rel.setProperty("travel_time", s.getTravelTime());
                     rel.setProperty("seg_cnt", s.getSegmentCount());
@@ -226,11 +230,15 @@ public class Neo4jServer1 extends Neo4jSocketServer.ReqExecutor {
                     rel.delete();
                     Node t1 = getProperTimeNode(startTime, s.getTime() - 1);
                     rel = t1.createRelationshipTo(roadNode, Edge.TIME_FROM_START_TO_END);
+                    int referenceCount = (int) t1.getProperty("ref");
+                    t1.setProperty("ref", referenceCount + 1);
                     rel.setProperty("status", status);
                     rel.setProperty("travel_time", travelTime);
                     rel.setProperty("seg_cnt", segCnt);
                     Node t2 = getProperTimeNode(s.getTime(), Integer.MAX_VALUE);
                     rel = t2.createRelationshipTo(roadNode, Edge.TIME_FROM_START_TO_END);
+                    referenceCount = (int) t2.getProperty("ref");
+                    t2.setProperty("ref", referenceCount + 1);
                     rel.setProperty("status", s.getJamStatus());
                     rel.setProperty("travel_time", s.getTravelTime());
                     rel.setProperty("seg_cnt", s.getSegmentCount());
@@ -243,42 +251,76 @@ public class Neo4jServer1 extends Neo4jSocketServer.ReqExecutor {
         return new AbstractTransaction.Result();
     }
 
-    // Just delete the rel with time then create some new time nodes and connect it.
     private AbstractTransaction.Result execute(UpdateTemporalDataTx tx) {
         try (Transaction t = db.beginTx()) {
             String roadName = tx.getRoadId();
             Node road = db.findNode(Label.label("Road"), "name", roadName);
+            // delete the old node and relationships.
+            boolean hasInner = true;
             Iterable<Relationship> timeRel = road.getRelationships(Direction.INCOMING, Edge.TIME_FROM_START_TO_END);
-            Relationship minRel = null, maxRel = null;
-            int minTime = Integer.MAX_VALUE, maxTime = Integer.MIN_VALUE;
-            for (Relationship rel : timeRel) {
-                Node endNode = rel.getEndNode();
-                int st = (int) endNode.getProperty("st_time");
-                int en = (int) endNode.getProperty("en_time");
+            ArrayList<Relationship> willBeDeleted = new ArrayList<>();
+            int mn = Integer.MAX_VALUE, mx = Integer.MIN_VALUE;
+            Relationship mnRel = null, mxRel = null;
+            int cnt = 0;
+            for (Relationship r : timeRel) {
+                Node startNode = r.getStartNode();
+                int st = (int) startNode.getProperty("st_time");
+                int en = (int) startNode.getProperty("en_time");
+                System.out.println("cur " + cnt + " , st = " + new Timestamp(st * 1000L) + ", en = " + new Timestamp(en * 1000L));
+                ++cnt;
                 if (tx.getEndTime() >= st && tx.getStartTime() <= en) {
-                    if (st < minTime) {
-                        minRel = rel;
-                        minTime = st;
+                    willBeDeleted.add(r);
+                    if (hasInner && tx.getStartTime() >= st && tx.getEndTime() <= en) {
+                        mn = st;
+                        mx = en;
+                        mnRel = mxRel = r;
+                        break;
                     }
-                    if (st > maxTime) {
-                        maxRel = rel;
-                        maxTime = st;
+                    hasInner = false;
+                    if (st < mn) {
+                        mnRel = r;
+                        mn = st;
                     }
-                    rel.delete();
+                    if (en > mx) {
+                        mxRel = r;
+                        mx = en;
+                    }
                 }
             }
-            Node timeNode1 = db.createNode(Label.label("Time"));
-            timeNode1.setProperty("st_time", minRel.getEndNode().getProperty("st_time"));
-            timeNode1.setProperty("en_time", tx.getStartTime() - 1);
-            timeNode1.createRelationshipTo(road, Edge.TIME_FROM_START_TO_END);
-            Node timeNode2 = db.createNode(Label.label("Time"));
-            timeNode2.setProperty("st_time", tx.getStartTime());
-            timeNode2.setProperty("en_time", tx.getEndTime() - 1);
-            timeNode2.createRelationshipTo(road, Edge.TIME_FROM_START_TO_END);
-            Node timeNode3 = db.createNode(Label.label("Time"));
-            timeNode3.setProperty("st_time", tx.getEndTime());
-            timeNode3.setProperty("en_time", maxRel.getEndNode().getProperty("en_time"));
-            timeNode3.createRelationshipTo(road, Edge.TIME_FROM_START_TO_END);
+            // update the first and last range.
+            Node t1 = getProperTimeNode(mn, tx.getStartTime() - 1);
+            Relationship r = t1.createRelationshipTo(road, Edge.TIME_FROM_START_TO_END);
+            int referenceCount = (int) t1.getProperty("ref");
+            t1.setProperty("ref", referenceCount + 1);
+            r.setProperty("status", mnRel.getProperty("status"));
+            r.setProperty("travel_time", mnRel.getProperty("travel_time"));
+            r.setProperty("seg_cnt", mnRel.getProperty("seg_cnt"));
+
+            Node t2 = getProperTimeNode(tx.getEndTime() + 1, mx);
+            r = t2.createRelationshipTo(road, Edge.TIME_FROM_START_TO_END);
+            referenceCount = (int) t2.getProperty("ref");
+            t2.setProperty("ref", referenceCount + 1);
+            r.setProperty("status", mxRel.getProperty("status"));
+            r.setProperty("travel_time", mxRel.getProperty("travel_time"));
+            r.setProperty("seg_cnt", mxRel.getProperty("seg_cnt"));
+
+            // delete the old value.
+            for (Relationship d : willBeDeleted) {
+                Node start = d.getStartNode();
+                int ref = (int) start.getProperty("ref");
+                ref -= 1;
+                if (ref == 0) start.delete();
+                d.delete();
+            }
+
+            // build the new node.
+            Node timeNode = getProperTimeNode(tx.getStartTime(), tx.getEndTime());
+            Relationship rel = timeNode.createRelationshipTo(road, Edge.TIME_FROM_START_TO_END);
+            rel.setProperty("status", tx.getJamStatus());
+            rel.setProperty("travel_time", tx.getTravelTime());
+            rel.setProperty("seg_cnt", tx.getSegmentCount());
+            referenceCount = (int) timeNode.getProperty("ref");
+            timeNode.setProperty("ref", referenceCount + 1);
             t.success();
         }
         return new AbstractTransaction.Result();
@@ -475,8 +517,8 @@ public class Neo4jServer1 extends Neo4jSocketServer.ReqExecutor {
                 boolean inner = true;
                 for (Relationship rel : rels) {
                     int travelTime = (int) rel.getProperty("travel_time");
-                    int stTime = (int) rel.getEndNode().getProperty("st_time");
-                    int enTime = (int) rel.getEndNode().getProperty("en_time");
+                    int stTime = (int) rel.getStartNode().getProperty("st_time");
+                    int enTime = (int) rel.getStartNode().getProperty("en_time");
                     if (stTime <= until && enTime >= when) {
                         if (inner && when >= stTime && until <= enTime) // inner.
                             return when + travelTime <= until ? when + travelTime : Integer.MAX_VALUE;

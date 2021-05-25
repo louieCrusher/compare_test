@@ -33,7 +33,7 @@ public class PostgreSQLExecutorClient implements DBProxy {
 
     public PostgreSQLExecutorClient(String serverHost, int parallelCnt, int queueLength) throws IOException, ClassNotFoundException, SQLException, InterruptedException {
         Class.forName("org.postgresql.Driver");
-        String initURL = "jdbc:postgresql://" + serverHost + ":5433/";
+        String initURL = "jdbc:postgresql://" + serverHost + ":5432/";
         String dbURL = initURL + "beijing_traffic?reWriteBatchedInserts=true";
         Connection initConn = DriverManager.getConnection(initURL, "postgres", "root");
         createDB(initConn);
@@ -260,16 +260,18 @@ public class PostgreSQLExecutorClient implements DBProxy {
             protected AbstractTransaction.Result executeQuery(Connection conn) throws Exception {
                 conn.setAutoCommit(false);
                 Long roadId = name2Id.get(tx.getRoadId());
-                try (PreparedStatement stmt1 = conn.prepareStatement("select ts_id, r_id, max(t) as max_t from temporal_status where r_id = ? and t <= ? group by r_id");
-                     PreparedStatement stmt2 = conn.prepareStatement("select status, travel_t, seg_cnt from temporal_status where ts_id = ?");
+                try (PreparedStatement stmt1 = conn.prepareStatement("select r_id, max(t) as max_t from temporal_status where r_id = ? and t <= ? group by r_id");
+                     PreparedStatement stmt2 = conn.prepareStatement("select status, travel_t, seg_cnt from temporal_status where r_id = ? and t = ?");
                      PreparedStatement stmt3 = conn.prepareStatement("insert into temporal_status(t, r_id, status, travel_t, seg_cnt) values(?, ?, ?, ?, ?)");
                      PreparedStatement stmt4 = conn.prepareStatement("delete from temporal_status where r_id = ? and t >= ? and t <= ?")) {
                     stmt1.setLong(1, roadId);
                     stmt1.setInt(2, tx.getEndTime());
                     ResultSet rs = stmt1.executeQuery();
+
                     // insert into table from t1 + 1 with the old value.
                     if (rs.next()) {
-                        stmt2.setLong(1, rs.getInt("ts_id"));
+                        stmt2.setLong(1, rs.getLong("r_id"));
+                        stmt2.setInt(2, rs.getInt("max_t"));
                         ResultSet r = stmt2.executeQuery();
                         if (r.next()) {
                             stmt3.setInt(1, tx.getEndTime() + 1);

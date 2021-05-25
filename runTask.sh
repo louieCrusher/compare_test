@@ -6,7 +6,7 @@ unset PREPARE_TEST
 unset PREPARE_OLD
 unset PREPARE_TSC
 
-export MAVEN_OPTS='-Xmx32g -Xms4g'
+export MAVEN_OPTS='-Xmx12g -Xms4g'
 # export MAVEN_OPTS='-Xmx18g -Xms12g'
 
 
@@ -28,7 +28,7 @@ function systemInfo() {
 
 function runPostgreSQLWriteStaticTest() {
   export DB_HOST=localhost
-  export RAW_DATA_PATH="E:\tgraph\test-data"
+  export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
   export MAX_CONNECTION_CNT=1
   export VERIFY_RESULT=false
   mvn -B --offline test -Dtest=postgre.WriteStaticPropertyTest
@@ -37,9 +37,9 @@ function runPostgreSQLWriteStaticTest() {
 function runPostgreSQLWriteTemporalTest() {
   export TEMPORAL_DATA_PER_TX=100
   export TEMPORAL_DATA_START=0501
-  export TEMPORAL_DATA_END=0630
+  export TEMPORAL_DATA_END=0501
   export DB_HOST=localhost
-  export RAW_DATA_PATH="E:\tgraph\test-data"
+  export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
   export MAX_CONNECTION_CNT=16
   export VERIFY_RESULT=false
   mvn -B --offline test -Dtest=postgre.WriteTemporalPropertyTest
@@ -48,10 +48,6 @@ function runPostgreSQLWriteTemporalTest() {
 function runPostgreSQLUpdateTemporalTest() {
   export DB_HOST=localhost
   export MAX_CONNECTION_CNT=1
-  # start time will be int.
-  export START_TIME=
-  # end time will be int.
-  export END_TIME=
   mvn -B --offline test -Dtest=postgre.UpdateTemporalPropertyTest
 }
 
@@ -116,7 +112,7 @@ function runPostgreSQLReachableAreaTest() {
 
 function runMariaDBWriteStaticTest() {
     export DB_HOST=localhost
-    export RAW_DATA_PATH="E:\tgraph\test-data"
+    export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
     export MAX_CONNECTION_CNT=16
     export VERIFY_RESULT=false
     mvn -B --offline test -Dtest=mariadb.WriteStaticPropertyTest
@@ -125,9 +121,9 @@ function runMariaDBWriteStaticTest() {
 function runMariaDBWriteTemporalTest() {
     export TEMPORAL_DATA_PER_TX=100
     export TEMPORAL_DATA_START=0501
-    export TEMPORAL_DATA_END=0630
+    export TEMPORAL_DATA_END=0501
     export DB_HOST=localhost
-    export RAW_DATA_PATH="E:\tgraph\test-data"
+    export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
     export MAX_CONNECTION_CNT=1
     export VERIFY_RESULT=false
     mvn -B --offline test -Dtest=mariadb.WriteTemporalPropertyTest
@@ -136,10 +132,6 @@ function runMariaDBWriteTemporalTest() {
 function runMariaDBUpdateTemporalTest() {
   export DB_HOST=localhost
   export MAX_CONNECTION_CNT=1
-  # start time will be int.
-  export START_TIME=
-  # end time will be int.
-  export END_TIME=
   mvn -B --offline test -Dtest=mariadb.UpdateTemporalPropertyTest
 }
 
@@ -195,13 +187,13 @@ function runMariaDBReachableAreaTest() {
 ########################################### Neo4j1 ###########################################
 
 function runNeo4jServer1() {
-  export DB_PATH="E:\tgraph\neo4j-server1-db"
+  export DB_PATH="C:\Users\yuewa\tgraph\data\neo4j1"
   mvn -B --offline compile exec:java -Dexec.mainClass=benchmark.server.Neo4jServer1
 }
 
 function runNeo4j1WriteStaticTest() {
   export DB_HOST=localhost
-  export RAW_DATA_PATH="E:\tgraph\test-data"
+  export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
   export MAX_CONNECTION_CNT=1
   export VERIFY_RESULT=false
   mvn -B --offline test -Dtest=neo4j.WriteStaticPropertyTest
@@ -209,9 +201,9 @@ function runNeo4j1WriteStaticTest() {
 function runNeo4j1WriteTemporalTest() {
   export TEMPORAL_DATA_PER_TX=100
   export TEMPORAL_DATA_START=0501
-  export TEMPORAL_DATA_END=0630
+  export TEMPORAL_DATA_END=0501
   export DB_HOST=localhost
-  export RAW_DATA_PATH="E:\tgraph\test-data"
+  export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
   export MAX_CONNECTION_CNT=1
   export VERIFY_RESULT=false
   mvn -B --offline test -Dtest=neo4j.WriteTemporalPropertyTest
@@ -220,10 +212,6 @@ function runNeo4j1WriteTemporalTest() {
 function runNeo4j1UpdateTemporalTest() {
   export DB_HOST=localhost
   export MAX_CONNECTION_CNT=1
-  # start time will be int.
-  export START_TIME=
-  # end time will be int.
-  export END_TIME=
   mvn -B --offline test -Dtest=neo4j.UpdateTemporalPropertyTest
 }
 
@@ -272,13 +260,13 @@ function runNeo4j1ReachableAreaTest() {
 ########################################### Neo4j2 ###########################################
 
 function runNeo4jServer2() {
-  export DB_PATH="E:\tgraph\neo4j-server2-db"
+  export DB_PATH="C:\Users\yuewa\tgraph\data\neo4j2"
   mvn -B --offline compile exec:java -Dexec.mainClass=benchmark.server.Neo4jServer2
 }
 
 function runNeo4j2WriteStaticTest() {
   export DB_HOST=localhost
-  export RAW_DATA_PATH="E:\tgraph\test-data"
+  export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
   export MAX_CONNECTION_CNT=1
   export VERIFY_RESULT=false
   mvn -B --offline test -Dtest=neo4j2.WriteStaticPropertyTest
@@ -286,9 +274,9 @@ function runNeo4j2WriteStaticTest() {
 function runNeo4j2WriteTemporalTest() {
   export TEMPORAL_DATA_PER_TX=100
   export TEMPORAL_DATA_START=0501
-  export TEMPORAL_DATA_END=0630
+  export TEMPORAL_DATA_END=0501
   export DB_HOST=localhost
-  export RAW_DATA_PATH="E:\tgraph\test-data"
+  export RAW_DATA_PATH="C:\Users\yuewa\tgraph\test-data-random"
   export MAX_CONNECTION_CNT=1
   export VERIFY_RESULT=false
   mvn -B --offline test -Dtest=neo4j2.WriteTemporalPropertyTest
@@ -297,10 +285,6 @@ function runNeo4j2WriteTemporalTest() {
 function runNeo4j2UpdateTemporalTest() {
   export DB_HOST=localhost
   export MAX_CONNECTION_CNT=1
-  # start time will be int.
-  export START_TIME=
-  # end time will be int.
-  export END_TIME=
   mvn -B --offline test -Dtest=neo4j2.UpdateTemporalPropertyTest
 }
 
@@ -341,6 +325,6 @@ function runNeo4j2ReachableAreaTest() {
   export START_CROSS_ID = 10
   # time will be int.
   export DEPARTURE_TIME = 10
-  export TRAVEL_TIME = 10
+  export TRAVEL_TIME = 11
   mvn -B --offline test -Dtest=neo4j2.ReachableAreaTest
 }
