@@ -22,11 +22,13 @@ public class GeneralizedDijkstra {
         pq.add(init);
         enq.put(init, true);
         while (!pq.isEmpty()) {
+            System.out.println("I am in queue...");
             State cur = pq.poll();
             if (vis.get(cur.curCross) != null) continue;
             answer.add(new ReachableCrossNode(cur.curCross, cur.curTime));
             vis.put(cur.curCross, true);
             ArrayList<Pair<Long, Long>> nextList = topology.getRoadList(cur.curCross);
+            System.out.println("nextList: " + nextList);
             for (Pair<Long, Long> next : nextList) {
                 int time = topology.earliestArriveTime(next.left, cur.curTime, tx.getDepartureTime() + tx.getTravelTime());
                 if (time == Integer.MAX_VALUE) continue;

@@ -15,15 +15,14 @@ import org.junit.Test;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.concurrent.ExecutionException;
 
 public class ReachableAreaTest {
     private static int threadCnt = Integer.parseInt(Helper.mustEnv("MAX_CONNECTION_CNT"));
     private static String serverHost = Helper.mustEnv("DB_HOST");
     private static String resultFile = Helper.mustEnv("SERVER_RESULT_FILE");
-    private static long startCrossId = Long.parseLong(Helper.mustEnv("START_CROSS_ID"));
-    private static int departureTime = Integer.parseInt(Helper.mustEnv("DEPARTURE_TIME"));
-    private static int travelTime = Integer.parseInt(Helper.mustEnv("TRAVEL_TIME"));
 
     private static Producer logger;
     private static DBProxy client;
@@ -31,26 +30,28 @@ public class ReachableAreaTest {
 
     @BeforeClass
     public static void initClient() throws IOException, ExecutionException, InterruptedException, SQLException, ClassNotFoundException {
-        logger = Helper.getLogger();
+        // logger = Helper.getLogger();
         client = new PostgreSQLExecutorClient(serverHost, threadCnt, 800);
         post = new BenchmarkTxResultProcessor("PostgreSQL(ReachableAreaQuery)", Helper.codeGitVersion());
-        post.setLogger(logger);
+        // post.setLogger(logger);
         post.setResult(new File(resultFile));
     }
 
     @Test
     public void test() throws Exception {
         ReachableAreaQueryTx tx = new ReachableAreaQueryTx();
-        tx.setDepartureTime(departureTime);
-        tx.setStartCrossId(startCrossId);
-        tx.setTravelTime(travelTime);
+        // startCrossId: long, departureTime: int, travelTime: int
+        tx.setDepartureTime((int) (Timestamp.valueOf("2010-05-01 00:52:00").getTime() / 1000L));
+        tx.setStartCrossId(36);
+        tx.setTravelTime(60);
         post.process(client.execute(tx), tx);
     }
 
     @AfterClass
     public static void close() throws IOException, InterruptedException, ProducerException {
         client.close();
+        Thread.sleep(1000 * 30);
         post.close();
-        logger.close();
+        // logger.close();
     }
 }

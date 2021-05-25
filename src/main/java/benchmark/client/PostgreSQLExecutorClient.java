@@ -515,11 +515,11 @@ public class PostgreSQLExecutorClient implements DBProxy {
                 stmt1.setInt(2, until);
                 rs = stmt1.executeQuery();
                 int en = -1;
-                if (rs.next()) en = rs.getInt("max_t");
+                if (rs.next()) en = rs.getInt("min_t");
                 stmt2.setInt(1, st);
                 stmt2.setInt(2, en);
                 rs = stmt2.executeQuery();
-                List<Pair<Integer, Integer>> l = new ArrayList<>();
+                ArrayList<Pair<Integer, Integer>> l = new ArrayList<>();
                 while (rs.next()) l.add(Pair.of(rs.getInt("t"), rs.getInt("travel_t")));
                 l.sort(Comparator.comparingInt(o -> o.left));
                 int sz = l.size();

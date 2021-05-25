@@ -100,11 +100,7 @@ function runPostgreSQLEntityTemporalConditionTest() {
 function runPostgreSQLReachableAreaTest() {
   export MAX_CONNECTION_CNT=1
   export DB_HOST=localhost
-  export SERVER_RESULT_FILE="E:\tgraph\pg_res\res_reachable_area.gz"
-  export START_CROSS_ID = 10
-  # time will be int.
-  export DEPARTURE_TIME = 10
-  export TRAVEL_TIME = 10
+  export SERVER_RESULT_FILE="C:\Users\yuewa\tgraph\result\postgre\reachable_area.gz"
   mvn -B --offline test -Dtest=postgre.ReachableAreaTest
 }
 
@@ -176,11 +172,7 @@ function runMariaDBEntityTemporalConditionTest() {
 function runMariaDBReachableAreaTest() {
   export MAX_CONNECTION_CNT=1
   export DB_HOST=localhost
-  export SERVER_RESULT_FILE="E:\tgraph\mariadb_res\res_reachable_area.gz"
-  export START_CROSS_ID = 10
-  # time will be int.
-  export DEPARTURE_TIME = 10
-  export TRAVEL_TIME = 10
+  export SERVER_RESULT_FILE="C:\Users\yuewa\tgraph\result\maria\reachable_area.gz"
   mvn -B --offline test -Dtest=mariadb.ReachableAreaTest
 }
 
@@ -248,12 +240,8 @@ function runNeo4j1EntityTemporalConditionTest() {
 function runNeo4j1ReachableAreaTest() {
   export MAX_CONNECTION_CNT=1
   export DB_HOST=localhost
-  export SERVER_RESULT_FILE="E:\tgraph\neo4j1_res\res_reachable_area.gz"
-  export START_CROSS_ID = 10
-  # time will be int.
-  export DEPARTURE_TIME = 10
-  export TRAVEL_TIME = 10
-  mvn -B --offline test -Dtest=neo4j1.ReachableAreaTest
+  export SERVER_RESULT_FILE="C:\Users\yuewa\tgraph\result\neo4j1\reachable_area.gz"
+  mvn -B --offline test -Dtest=neo4j.ReachableAreaTest
 }
 
 
@@ -321,10 +309,6 @@ function runNeo4j2EntityTemporalConditionTest() {
 function runNeo4j2ReachableAreaTest() {
   export MAX_CONNECTION_CNT=1
   export DB_HOST=localhost
-  export SERVER_RESULT_FILE="E:\tgraph\neo4j2_res\res_reachable_area.gz"
-  export START_CROSS_ID = 10
-  # time will be int.
-  export DEPARTURE_TIME = 10
-  export TRAVEL_TIME = 11
+  export SERVER_RESULT_FILE="C:\Users\yuewa\tgraph\result\neo4j2\reachable_area.gz"
   mvn -B --offline test -Dtest=neo4j2.ReachableAreaTest
 }
