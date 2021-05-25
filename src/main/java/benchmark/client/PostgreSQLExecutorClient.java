@@ -505,7 +505,7 @@ public class PostgreSQLExecutorClient implements DBProxy {
             int ret = Integer.MAX_VALUE;
             try (PreparedStatement stmt0 = conn.prepareStatement("select r_id, max(t) as max_t from temporal_status where r_id = ? and t <= ? group by r_id");
                  PreparedStatement stmt1 = conn.prepareStatement("select r_id, min(t) as min_t from temporal_status where r_id = ? and t >= ? group by r_id");
-                 PreparedStatement stmt2 = conn.prepareStatement("select t, travel_t from temporal_status where t >= ? and t <= ?")) {
+                 PreparedStatement stmt2 = conn.prepareStatement("select t, travel_t from temporal_status where r_id = ? and t >= ? and t <= ?")) {
                 stmt0.setLong(1, roadId);
                 stmt0.setInt(2, when);
                 ResultSet rs = stmt0.executeQuery();
@@ -514,13 +514,15 @@ public class PostgreSQLExecutorClient implements DBProxy {
                 stmt1.setLong(1, roadId);
                 stmt1.setInt(2, until);
                 rs = stmt1.executeQuery();
-                int en = -1;
+                int en = Integer.MAX_VALUE;
                 if (rs.next()) en = rs.getInt("min_t");
-                stmt2.setInt(1, st);
-                stmt2.setInt(2, en);
+                stmt2.setLong(1, roadId);
+                stmt2.setInt(2, st);
+                stmt2.setInt(3, en);
                 rs = stmt2.executeQuery();
                 ArrayList<Pair<Integer, Integer>> l = new ArrayList<>();
                 while (rs.next()) l.add(Pair.of(rs.getInt("t"), rs.getInt("travel_t")));
+                if (en == Integer.MAX_VALUE) l.add(Pair.of(Integer.MAX_VALUE, 0));
                 l.sort(Comparator.comparingInt(o -> o.left));
                 int sz = l.size();
                 if (sz == 1) return when + l.get(0).right;
