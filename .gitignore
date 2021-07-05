@@ -10,4 +10,5 @@ buildNumber.properties
 .mvn/wrapper/maven-wrapper.jar
 compare_test.iml
 .idea/
+.DS_Store
 
