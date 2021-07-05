@@ -11,4 +11,5 @@ buildNumber.properties
 compare_test.iml
 .idea/
 .DS_Store
+result_check/.DS_Store
 
